@@ -1,0 +1,115 @@
+"""Fast tests on synthetic data: no downloads needed."""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from cgd import stats as S  # noqa: E402
+from cgd.data import TwoStep, factor_scores, parse_task_file, raw_mb_index, split_items, stay_design  # noqa: E402
+from cgd.fit import fit  # noqa: E402
+from cgd.models import MODELS, STAY, drifting_probs, stay_data  # noqa: E402
+
+RNG = np.random.default_rng(0)
+MB_AGENT = np.array([0.0, np.log(6), np.log(0.01), np.log(4), 0.0])
+MF_AGENT = np.array([0.0, np.log(0.01), np.log(6), np.log(4), 0.0])
+
+
+def blank(n=200):
+    z = np.zeros(n, np.int64)
+    return TwoStep(z, z, z, z, z, drifting_probs(n, RNG))
+
+
+def test_parse_task_file_maps_columns_and_missed_trials(tmp_path):
+    lines = ["AgeDropdown,22", "", "instructionLoop", "id,INSTRUCT,twostep_instruct_9,1000",
+             "1,0.7,0.3,0.6,0.4,left,1,500,true,left,1,2,600,1,1",      # stim 1, common -> state 2
+             "2,0.7,0.3,0.6,0.4,right,2,450,false,right,2,2,700,0,1",   # stim 2, rare -> state 2
+             "3,0.7,0.3,0.6,0.4,-1,2,2502,-1,-1,-1,-1,-1,-1,1",         # missed first stage
+             "4,0.7,0.3,0.6,0.4,left,1,480,true,-1,-1,2,2500,-1,1"]     # missed second stage
+    p = tmp_path / "s.csv"
+    p.write_text("\n".join(lines))
+    x = parse_task_file(p)
+    assert list(x.a1) == [0, 1, -1, 0]
+    assert list(x.common) == [1, 0, 0, 1]
+    assert list(x.s2[[0, 1, 3]]) == [0, 0, 0]
+    assert list(x.a2) == [0, 1, -1, -1]
+    assert list(x.r) == [1, 0, 0, 0]
+    assert x.probs[0, 1, 0] == 0.6
+    # only pair 1->2 is valid (pair 2->3 has a missed choice, 3->4 a missed outcome)
+    assert len(stay_design(x)) == 1
+
+
+def test_model_based_agent_shows_interaction_model_free_does_not():
+    m = MODELS["hybrid"]
+    mb = np.mean([raw_mb_index(m.simulate(MB_AGENT, blank(), RNG)) for _ in range(20)])
+    mf = np.mean([raw_mb_index(m.simulate(MF_AGENT, blank(), RNG)) for _ in range(20)])
+    assert mb > 0.2 and abs(mf) < 0.1
+
+
+def test_mask_splits_likelihood_exactly():
+    m = MODELS["hybrid"]
+    x = m.simulate(MB_AGENT, blank(), RNG)
+    th = np.array([0.2, 1.0, 0.5, 1.0, 0.3])
+    full = m.nll(th, x)
+    odd = np.arange(200) % 2 == 1
+    halves = []
+    for keep in (odd, ~odd):
+        x.mask = keep.astype(float); halves.append(m.nll(th, x))
+    x.mask = np.zeros(200)
+    assert np.isclose(sum(halves), full) and m.nll(th, x) == 0.0
+
+
+def test_hierarchical_stay_regression_recovers_mb_index():
+    n = 80
+    true_mb = RNG.normal(0.4, 0.3, n)
+    data = {}
+    for i in range(n):
+        x = blank()
+        x.a1 = RNG.integers(0, 2, 200); x.a2 = RNG.integers(0, 2, 200)
+        x.r = RNG.integers(0, 2, 200); x.common = (RNG.random(200) < .7).astype(np.int64)
+        s = stay_data(x)
+        data[f"s{i:03d}"] = STAY.simulate(np.array([0.8, 0.3, 0.0, true_mb[i]]), s, RNG)
+    f = fit(STAY, data, n_samples=100)
+    order = [int(s[1:]) for s in f.ids]
+    assert np.corrcoef(true_mb[order], f.theta[:, 3])[0, 1] > 0.6
+
+
+def test_gee_finds_planted_symptom_effect():
+    rows, people = [], []
+    for i in range(150):
+        score = RNG.normal()
+        people.append({"subj": f"s{i}", "CIT": score, "age": RNG.normal(35, 10), "iq": RNG.normal(100, 15),
+                       "gender": RNG.choice([-1, 1])})
+        mb = 0.5 - 0.3 * score
+        rew, tr = RNG.choice([-1, 1], 200), RNG.choice([-1, 1], 200)
+        stay = RNG.random(200) < 1 / (1 + np.exp(-(0.5 + 0.3 * rew + mb * rew * tr)))
+        rows.append(pd.DataFrame({"stay": stay.astype(int), "reward": rew, "transition": tr, "subj": f"s{i}"}))
+    people = pd.DataFrame(people).set_index("subj")
+    t = pd.concat(rows, ignore_index=True)
+    z = people.apply(S.zscore)
+    for c in z.columns:
+        t[c] = t.subj.map(z[c])
+    res = S.gee(t, ["CIT"])["terms"]["reward:transition:CIT"]
+    assert res["beta"] < 0 and res["p"] < 0.001
+
+
+def test_factor_scores_and_item_split():
+    items = pd.DataFrame(RNG.normal(size=(50, 4)), columns=["OCI_1", "OCI_2", "AUDIT_1", "AUDIT_2"])
+    w = pd.DataFrame({"CIT": [1.0, 1.0, 1.0, 1.0]}, index=items.columns)
+    full = factor_scores(items, w)["CIT"]
+    no_audit = factor_scores(items, w, drop_prefix="AUDIT")["CIT"]
+    z = (items - items.mean()) / items.std(ddof=0)
+    assert np.allclose(full, z.sum(1)) and np.allclose(no_audit, z[["OCI_1", "OCI_2"]].sum(1))
+    odd, even = split_items(w)
+    assert odd == ["OCI_1", "AUDIT_1"] and even == ["OCI_2", "AUDIT_2"]
+
+
+def test_reliability_helpers():
+    assert np.isclose(S.spearman_brown(0.5), 2 / 3)
+    assert np.isclose(S.disattenuate(0.1, 0.25, 1.0), 0.2)
+    assert 770 <= S.n_for_power(0.1) <= 790        # textbook value ~783
+    q = S.bh([0.01, 0.04, 0.03])
+    assert np.allclose(q, [0.03, 0.04, 0.04])
