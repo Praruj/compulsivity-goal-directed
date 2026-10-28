@@ -1,6 +1,7 @@
 """Hierarchical fits, one job per call, cached to outputs/fits/<job>.pkl so jobs can run in parallel.
 
-Jobs: {stay,hybrid,model_free,model_based}_s{1,2}[_{odd,even,first,second}] and recovery_{stay,hybrid}_s{1,2}.
+Jobs: {stay,hybrid,model_free,model_based}_s{1,2,3}[_{odd,even,first,second}] and recovery_{stay,hybrid}_s{1,2,3}.
+s3 is the independent Seow et al. 2021 sample.
 """
 from __future__ import annotations
 
@@ -13,7 +14,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from cgd.data import load_self_report, load_task  # noqa: E402
+from cgd.data import load_seow, load_self_report, load_task  # noqa: E402
 from cgd.fit import fit, recovery  # noqa: E402
 from cgd.models import MODELS, STAY, stay_data  # noqa: E402
 
@@ -23,6 +24,8 @@ HALVES = {"odd": lambda n: np.arange(n) % 2 == 1, "even": lambda n: np.arange(n)
 
 
 def task_for(study: int):
+    if study == 3:
+        return load_seow()[0]
     return load_task(study, load_self_report(study).index)
 
 
@@ -50,7 +53,7 @@ def run(job: str) -> None:
         true, rec = recovery(model, f, data)
         res = {"true": true, "recovered": rec, "ids": f.ids, "params": model.params}
     else:
-        i = next(i for i, p in enumerate(parts) if p in ("s1", "s2"))
+        i = next(i for i, p in enumerate(parts) if p in ("s1", "s2", "s3"))
         kind, study = "_".join(parts[:i]), int(parts[i][1])
         half = parts[i + 1] if len(parts) > i + 1 else None
         model, data = build(kind, task_for(study), half)

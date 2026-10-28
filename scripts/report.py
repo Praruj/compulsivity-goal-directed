@@ -119,6 +119,35 @@ def power_plot():
     plt.close(fig)
 
 
+def replication_plot():
+    path = ROOT / "outputs" / "results_addendum.json"
+    if not path.exists():
+        return
+    A = json.loads(path.read_text())
+    g2, sw = A["glmm_study2"], A.get("seow2021")
+    term = lambda m, s: m["terms"][f"reward:transition:{s}"]  # noqa: E731
+    rows = [("Gillan 2016 Study 2, published glmer", {"beta": -0.058, "se": 0.058 / 4.71}, INK),
+            ("Study 2, my mixed model", term(g2["H1_AD_CIT_SW"], "CIT"), BLUE),
+            ("Study 2, my GEE", term(RES["gee_study2"]["H1_AD_CIT_SW"], "CIT"), GREY)]
+    if sw:
+        rows += [("Seow 2021 (n = 192), my mixed model", term(sw["glmm"]["B1_AD_CIT_SW"], "CIT"), RED),
+                 ("Seow 2021, my GEE", term(sw["gee"]["B1_AD_CIT_SW"], "CIT"), GREY),
+                 ("Pooled (Study 2 + Seow, mixed model)", sw["B2_pooled"], GOLD)]
+    rows += [("AUDIT alone, Study 2 mixed model", term(g2["H2a_audit"], "audit_total"), GREY)]
+    if sw:
+        rows += [("AUDIT alone, Seow mixed model", term(sw["glmm"]["B3_audit"], "audit_total"), GREY)]
+    fig, ax = plt.subplots(figsize=(6.6, 3.8))
+    for i, (lab, t, col) in enumerate(rows[::-1]):
+        ax.errorbar(t["beta"], i, xerr=1.959964 * t["se"], fmt="o", color=col, capsize=2)
+    ax.axvline(0, color=INK, lw=0.8)
+    ax.set_yticks(range(len(rows)), [r[0] for r in rows[::-1]], fontsize=8)
+    ax.set_xlabel("reward x transition x score (log-odds per SD, 95% CI)\n"
+                  "< 0 = less model-based; CIT unless labelled")
+    fig.tight_layout()
+    fig.savefig(FIG / "replication.png", dpi=160)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    stay_plot(); forest(); reliability_plot(); power_plot()
+    stay_plot(); forest(); reliability_plot(); power_plot(); replication_plot()
     print("figures in", FIG)

@@ -136,3 +136,16 @@ def test_glmm_recovers_fixed_and_random_effects():
     assert abs(g["terms"]["reward:transition:CIT"]["beta"] - planted) < 3 * g["terms"]["reward:transition:CIT"]["se"]
     assert abs(g["terms"]["reward"]["beta"] - 0.4) < 0.05
     assert abs(g["random_sd"]["Intercept"] - 0.8) < 0.15 and abs(g["random_sd"]["reward:transition"] - 0.25) < 0.1
+
+
+def test_seow_coding():
+    from cgd.data import seow_from_frame
+    d = pd.DataFrame({"nTrial": [1, 2, 3, 4], "r1": .7, "r2": .3, "r3": .6, "r4": .4,
+                      "S1c": [1, 2, np.nan, 2], "S1rt": [0.5, 0.6, np.nan, 0.1], "trans": [1, 1, 2, 2],
+                      "S2s": [2, 3, np.nan, 2], "S2c": [4, 5, 0, 3], "S2rt": [.5, .5, np.nan, .5],
+                      "hit": [1, 0, np.nan, 1]})
+    x = seow_from_frame(d)
+    assert x.a1.tolist() == [0, 1, -1, -1]          # trial 4 is faster than 150 ms
+    assert x.s2.tolist()[:2] == [0, 1] and x.a2.tolist() == [1, 0, -1, -1]
+    assert x.r.tolist() == [1, 0, 0, 0] and x.common.tolist()[:2] == [1, 1]
+    assert x.probs.shape == (4, 2, 2) and x.probs[0, 1, 0] == 0.6

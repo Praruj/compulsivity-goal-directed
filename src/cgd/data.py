@@ -133,3 +133,50 @@ def quality(x: TwoStep) -> dict[str, float]:
     return {"missed_first": float(1 - valid.mean()), "same_first": float(same),
             "rt1_median": float(np.nanmedian(x.rt1)) if x.rt1 is not None else np.nan,
             "rt2_median": float(np.nanmedian(x.rt2)) if x.rt2 is not None else np.nan}
+
+
+# ---------- independent sample: Seow et al. 2021 (https://osf.io/mx9kf, CC-BY 4.0) ----------
+SEOW = RAW.parent / "seow2021"
+SEOW_PREFIX = {"ALCOHOL": "AUDIT", "LSASONE": "LSAS"}
+
+
+def seow_from_frame(d: pd.DataFrame, fast: float = 0.15) -> TwoStep:
+    """One person's rows from SeowEtAl_twostepBehavData.csv. S1c 1/2; S2s 2/3; S2c 3/4 (state 2) or 5/6 (state 3),
+    0 = missed; trans 1 = common, 2 = rare; hit 0/1; r1..r4 drifting reward probabilities. First-stage responses
+    faster than 150 ms count as missed, as in the authors' script."""
+    d = d.sort_values("nTrial")
+    ok1 = d.S1c.notna().to_numpy() & (d.S1rt.fillna(0).to_numpy() > fast)
+    ok2 = ok1 & (d.S2c.fillna(0).to_numpy() > 0) & d.hit.notna().to_numpy()
+    a1 = np.where(ok1, d.S1c.fillna(1).to_numpy() - 1, -1).astype(np.int64)
+    s2 = np.where(ok1, d.S2s.fillna(2).to_numpy() - 2, 0).astype(np.int64)
+    a2 = np.where(ok2, (d.S2c.fillna(3).to_numpy() - 3) % 2, -1).astype(np.int64)
+    r = np.where(ok2, d.hit.fillna(0).to_numpy(), 0).astype(np.int64)
+    c = np.where(ok1, d.trans.to_numpy() == 1, 0).astype(np.int64)
+    probs = d[["r1", "r2", "r3", "r4"]].to_numpy().reshape(-1, 2, 2)
+    return TwoStep(a1, s2, a2, r, c, probs, np.where(ok1, d.S1rt, np.nan), np.where(ok2, d.S2rt, np.nan))
+
+
+def load_seow(root: Path = SEOW) -> tuple[dict[str, TwoStep], pd.DataFrame]:
+    """Task data and a person table with AD/CIT/SW (Gillan 2016 weights on items z-scored in this sample), the
+    questionnaire totals, CIT without AUDIT items, odd/even-item CIT, and age/IQ/gender."""
+    beh = pd.read_csv(root / "SeowEtAl_twostepBehavData.csv")
+    task = {sid: seow_from_frame(g) for sid, g in beh.groupby("subj")}
+    q = pd.read_csv(root / "SeowEtAl_twostepQuestData.csv").set_index("qnid")
+    weights = pd.read_csv(root / "GillanEtAl2016_itemWeights.csv", index_col=0)
+    weights.columns = ["AD", "CIT", "SW"]
+    names = {}
+    for col in q.columns:
+        head = col.rstrip("0123456789")
+        if col != head and head != "IQ":
+            names[col] = f"{SEOW_PREFIX.get(head, head)}_{col[len(head):]}"
+    items = q[list(names)].rename(columns=names)
+    df = factor_scores(items, weights)
+    df["CIT_noAUDIT"] = factor_scores(items, weights, drop_prefix="AUDIT")["CIT"]
+    odd, even = split_items(weights)
+    df["CIT_odd_items"] = factor_scores(items, weights, item_subset=odd)["CIT"]
+    df["CIT_even_items"] = factor_scores(items, weights, item_subset=even)["CIT"]
+    for t in ["alcohol", "aes", "bis", "eat", "lsas", "oci", "scz", "sds", "stai"]:
+        df[f"{'audit' if t == 'alcohol' else t}_total"] = q[f"total_{t}"]
+    df["age"], df["iq"] = q.age, q.total_iq
+    df["gender"] = np.where(q.gender == "Male", 1.0, np.where(q.gender == "Female", -1.0, np.nan))
+    return task, df.loc[[s for s in df.index if s in task]]
