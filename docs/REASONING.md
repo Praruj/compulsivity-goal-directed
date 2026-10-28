@@ -206,3 +206,31 @@ valid second-stage response, RT > 150 ms).
 - **D3 (exploratory).** CIT on the choice-based index (mb_index) and RT slowing entered together: does each carry
   separate information? And does a composite (mean of the two z-scores) have higher split-half reliability than
   either alone?
+
+---
+
+## Addendum 3 (2026-10-29): a joint choice + RT model (RL-DDM)
+
+Written after Addendum 2's results and **before** fitting the RL-DDM to any real data (only synthetic recovery
+checks had been run). Addendum 2 found that a simple average of the choice-based model-based index and RT slowing
+was the strongest compulsivity marker. The principled version is a reinforcement-learning drift-diffusion model
+(Shahar et al. 2019) that explains each choice and its RT together.
+
+**Model (`cgd.ddm.RLDDM`).** Values are learned as in the hybrid model. Stage 1 is a Wiener diffusion with drift
+v_MB × (model-based value difference) + v_MF × (model-free value difference) ± perseveration, boundary a1,
+non-decision time t1. Stage 2 has drift v2 × (Q2 difference), boundary a2, non-decision time t2, and τ, an extra
+non-decision delay after rare transitions (the surprise slowing). Starting point unbiased; 2% uniform lapse;
+RTs under 150 ms dropped. 10 parameters per person, fitted with the same hierarchical EM.
+
+- **E1 (identifiability).** Parameter recovery in both samples (simulate everyone with their fitted parameters,
+  refit). A parameter is interpreted only if recovery r ≥ .5.
+- **E2 (primary).** log v_MB ~ CIT + age + IQ + gender (person-level OLS, HC3), one-sided CIT < 0, in Study 2
+  and Seow.
+- **E3.** τ ~ CIT, one-sided CIT < 0, both samples.
+- **E4 (reliability and strength vs the simple markers).** Odd/even split-half reliability of log v_MB and τ
+  (Study 2 and Seow), compared with the choice-only hybrid β_MB, the stay-regression mb_index, raw RT slowing and
+  the Addendum 2 composite; and the CIT effect (SD per SD) of each. The RL-DDM "wins" if log v_MB, or the mean of
+  z(log v_MB) and z(−τ), has both a CIT effect at least as large as the composite's and reliability within 0.05
+  of it, in Study 2.
+- **E5 (model check).** Simulated data from the fitted parameters should reproduce the observed group stay
+  pattern (reward × transition) and median RT slowing within 25%.
