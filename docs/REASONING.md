@@ -234,3 +234,9 @@ RTs under 150 ms dropped. 10 parameters per person, fitted with the same hierarc
   of it, in Study 2.
 - **E5 (model check).** Simulated data from the fitted parameters should reproduce the observed group stay
   pattern (reward × transition) and median RT slowing within 25%.
+
+*Correction to Addendum 3, made before any real-data RL-DDM result was seen (fits were running):* E4's composite
+was written as the mean of z(log v_MB) and z(−τ). That is a sign error. τ is the surprise slowing, so larger τ,
+like larger v_MB, means more use of the task structure (Addendum 2's composite averaged the model-based index and
+RT slowing for the same reason). Mixing in −τ would make the two parts cancel. The composite is computed as the
+mean of z(log v_MB) and z(τ).
