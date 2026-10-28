@@ -161,3 +161,48 @@ pipeline as Study 2, the alcohol tests, reliability, and an honest power stateme
 - **B4.** Split-half reliability (odd/even) of the raw model-based index and of hierarchical stay-regression
   `mb_index` in this sample, compared with Study 2.
 - GEE versions of B1 are reported alongside, as a robustness check.
+
+---
+
+## Addendum 2 (2026-10-29): transition learning and a reaction-time marker
+
+Written after Addendum 1's results, and **before** fitting any transition-learning model or computing any
+reaction-time measure on real data. While planning it I read two published results on these data that my
+analyses could have been guided by:
+
+- Sharp, Dolan & Eldar (2023, *Psychological Medicine*) re-analysed Gillan Study 2 and found that compulsivity
+  goes with a **faster state-transition learning rate γ** (β = 0.15, p = .003), fully mediated by a lower β_MB
+  (β_MB ~ compulsivity β = −0.12, p < .001). My post-hoc Study 2 β_MB result (−0.117) is therefore a
+  re-discovery of their result, not a new finding, and the paper will say so.
+- Seow et al. (2021) found that compulsive people **slow down less after rare transitions** at the second
+  stage, and replicated this in Gillan Study 2.
+
+Neither result has been tested in the other sample with independent code, and the γ result has not been tested
+in the Seow sample at all. So:
+
+### C. Transition learning (hybrid model + incremental transition learning)
+
+Model `hybrid_tl`: the Daw hybrid, plus a learned belief p_a = P(the "own" second-stage state | action a),
+starting at the instructed 0.7. After each transition p_a += γ (1[common] − p_a) for the chosen action only. The
+model-based value uses p_a instead of the fixed 0.7. Parameters: α, β_MB, β_MF, β2, perseveration, γ (logit
+scale). Fitted, recovered and compared with the fixed hybrid exactly like the original models.
+
+- **C1 (replication of Sharp et al. in Study 2 with my code).** logit γ ~ CIT + age + IQ + gender, person-level
+  OLS with HC3: CIT > 0, α = .05 two-sided. Secondary: with AD and SW in the model.
+- **C2 (new test, Seow sample).** The same, one-sided (CIT > 0), α = .05. Power is low (~35% if the Study 2
+  standardised effect is 0.15), so a null is not evidence against it.
+- **C3 (mediation, both samples).** The CIT coefficient on logit γ when log β_MB is added. Expectation from Sharp et
+  al.: it shrinks toward zero.
+- **C4.** iBIC of hybrid_tl vs hybrid in both samples. γ is interpreted only if its recovery r ≥ .5.
+
+### D. Reaction-time marker: second-stage slowing after rare transitions
+
+Per person: RT slowing = median second-stage RT after rare transitions − after common transitions (trials with a
+valid second-stage response, RT > 150 ms).
+
+- **D1.** RT slowing ~ CIT + age + IQ + gender (person-level OLS, HC3), one-sided CIT < 0, in Study 2 and Seow.
+- **D2.** Split-half reliability of RT slowing (odd/even trials) in both samples, compared with the choice-based
+  model-based index.
+- **D3 (exploratory).** CIT on the choice-based index (mb_index) and RT slowing entered together: does each carry
+  separate information? And does a composite (mean of the two z-scores) have higher split-half reliability than
+  either alone?
