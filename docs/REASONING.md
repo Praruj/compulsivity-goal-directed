@@ -112,3 +112,52 @@ make an individual-level predictor.
 - If split-half reliability of the model-based index is below .5, the disattenuated effect sizes are flagged as
   unstable (correcting with a small denominator inflates them).
 - All tests are reported, including the null ones, in `outputs/results.json`.
+
+---
+
+## Addendum 1 (2026-10-29): mixed-model check and an independent sample
+
+Written after the results above were in `outputs/results.json` and the README, and **before** (a) fitting any
+mixed model to the real data and (b) downloading or looking at the independent sample. Everything here is
+reported, whatever it shows.
+
+### A. Mixed model (same Study 1 and Study 2 data)
+
+The primary tests above used GEE, whose population-averaged coefficients are smaller than Gillan et al.'s glmer
+by construction, and the alcohol result (H2a) sat near p = .05. I now fit the model they fitted:
+`stay ~ reward * transition * (scores + age + IQ + gender) + (reward * transition | subj)`, logit link, Laplace
+approximation (glmer's default), full 4 x 4 random-effect covariance, Wald z. Implementation: `cgd.stats.glmm`,
+checked on synthetic data (`test_glmm_recovers_fixed_and_random_effects`). Python has no lme4; this is the same
+model, written by me, not lme4 itself.
+
+- **A1.** H1, H1b, H2a, H2b (descriptive shrinkage), H2c and the single-factor models are re-run with the GLMM.
+  Expectation: CIT coefficient close to the paper's (−0.058, z ≈ −4.7) and larger in magnitude than my GEE
+  (−0.041). If my GLMM coefficient for CIT in the H1 model lies within ±0.010 of −0.058, I call the replication
+  "numerically close"; otherwise I report the gap.
+- **A2.** Alcohol decision rule: if GEE and GLMM disagree on H2a at p < .05, the conclusion is "fragile
+  (model-dependent)", not "absent". If both are above .05, "not supported". If both are below, "supported but carried
+  by CIT" only if the GLMM shrinkage (H2b) is ≥ 50%.
+
+### B. Independent sample: Seow et al. 2021 (*J Neurosci*), OSF mx9kf, CC-BY 4.0
+
+From the paper (I have not opened the data): 192 people after exclusions, recruited in the lab with EEG, 150
+two-step trials (70/30 transitions, drifting rewards), the same nine questionnaires as Gillan Study 2 plus I-CAR
+IQ, and Gillan 2016's item weights on the OSF page. The authors already report that compulsivity relates to
+less model-based control in this sample, so the direction is not blind. What is new is independent code, the same
+pipeline as Study 2, the alcohol tests, reliability, and an honest power statement.
+
+- **Scores.** If item-level answers are present, AD, CIT and SW are computed with Gillan 2016's weights applied to
+  items z-scored within this sample (as for Study 2); otherwise the authors' provided scores are used, and failing
+  that the OCI-R total stands in for CIT. Covariates: age, IQ, gender, as available.
+- **Power, stated before looking.** Scaling the Study 2 glmer z (−4.7) by √(192/1413 × 150/200) gives an expected
+  z ≈ −1.5: about 45% power one-sided. A null here would not be evidence against the effect.
+- **B1 (primary).** CIT × reward × transition < 0 in the GLMM with AD and SW, one-sided α = .05, plus the
+  CIT-only model. Verdicts: "replicated" if one-sided p < .05; "consistent" if not significant but the 95% CI
+  contains the Study 2 GLMM estimate; "inconsistent" if a two-sided test of the Study 2 vs Seow difference gives
+  p < .05.
+- **B2.** Pooled estimate: inverse-variance fixed-effect combination of Study 2 and Seow GLMM CIT coefficients,
+  with the heterogeneity Q test.
+- **B3 (exploratory).** AUDIT alone and AUDIT + CIT (GLMM). No verdict with n = 192; estimate and CI only.
+- **B4.** Split-half reliability (odd/even) of the raw model-based index and of hierarchical stay-regression
+  `mb_index` in this sample, compared with Study 2.
+- GEE versions of B1 are reported alongside, as a robustness check.
