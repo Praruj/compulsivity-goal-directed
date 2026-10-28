@@ -113,3 +113,26 @@ def test_reliability_helpers():
     assert 770 <= S.n_for_power(0.1) <= 790        # textbook value ~783
     q = S.bh([0.01, 0.04, 0.03])
     assert np.allclose(q, [0.03, 0.04, 0.04])
+
+
+def test_glmm_recovers_fixed_and_random_effects():
+    rows, people = [], []
+    for i in range(400):
+        score = RNG.normal()
+        people.append({"subj": f"s{i}", "CIT": score, "age": RNG.normal(35, 10), "iq": RNG.normal(100, 15),
+                       "gender": RNG.choice([-1, 1])})
+        mb = 0.3 - 0.15 * score + RNG.normal(0, 0.25)
+        rew, tr = RNG.choice([-1, 1], 200), RNG.choice([-1, 1], 200)
+        stay = RNG.random(200) < 1 / (1 + np.exp(-(1 + RNG.normal(0, 0.8) + 0.4 * rew + mb * rew * tr)))
+        rows.append(pd.DataFrame({"stay": stay.astype(int), "reward": rew, "transition": tr, "subj": f"s{i}"}))
+    people = pd.DataFrame(people).set_index("subj")
+    t = pd.concat(rows, ignore_index=True)
+    z = people.apply(S.zscore)
+    for c in z.columns:
+        t[c] = t.subj.map(z[c])
+    g = S.glmm(t, ["CIT"])
+    planted = -0.15 * people.CIT.std()
+    assert g["converged"]
+    assert abs(g["terms"]["reward:transition:CIT"]["beta"] - planted) < 3 * g["terms"]["reward:transition:CIT"]["se"]
+    assert abs(g["terms"]["reward"]["beta"] - 0.4) < 0.05
+    assert abs(g["random_sd"]["Intercept"] - 0.8) < 0.15 and abs(g["random_sd"]["reward:transition"] - 0.25) < 0.1
