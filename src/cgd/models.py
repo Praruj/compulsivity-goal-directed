@@ -129,6 +129,89 @@ def _ts(use_mb, use_mf):
                  lambda x: int(((x.a1 >= 0) * (x.mask > 0)).sum() + ((x.a2 >= 0) * (x.mask > 0)).sum()))
 
 
+# ---------- hybrid with incremental transition learning (Sharp, Dolan & Eldar 2023) ----------
+@njit(cache=True)
+def _nll_twostep_tl(th, a1, s2, a2, r, mask):
+    """Hybrid whose model-based system learns p_a = P(own state | a) from 0.7 with rate gamma (chosen action only)."""
+    alpha = 1.0 / (1.0 + np.exp(-th[0]))
+    b_mb, b_mf, b2, pers = np.exp(th[1]), np.exp(th[2]), np.exp(th[3]), th[4]
+    gamma = 1.0 / (1.0 + np.exp(-th[5]))
+    q1 = np.zeros(2)
+    q2 = np.full((2, 2), 0.5)
+    p0, p1 = 0.7, 0.7
+    prev = -1
+    nll = 0.0
+    for t in range(len(a1)):
+        if a1[t] < 0:
+            continue
+        m0, m1 = max(q2[0, 0], q2[0, 1]), max(q2[1, 0], q2[1, 1])
+        u0 = b_mb * (p0 * m0 + (1 - p0) * m1) + b_mf * q1[0]
+        u1 = b_mb * (p1 * m1 + (1 - p1) * m0) + b_mf * q1[1]
+        if prev == 0:
+            u0 += pers
+        elif prev == 1:
+            u1 += pers
+        m = max(u0, u1)
+        nll -= mask[t] * ((u1 if a1[t] == 1 else u0) - m - np.log(np.exp(u0 - m) + np.exp(u1 - m)))
+        prev = a1[t]
+        own = 1.0 if s2[t] == a1[t] else 0.0
+        if a1[t] == 0:
+            p0 += gamma * (own - p0)
+        else:
+            p1 += gamma * (own - p1)
+        if a2[t] < 0:
+            continue
+        s = s2[t]
+        v0, v1 = b2 * q2[s, 0], b2 * q2[s, 1]
+        m = max(v0, v1)
+        nll -= mask[t] * ((v1 if a2[t] == 1 else v0) - m - np.log(np.exp(v0 - m) + np.exp(v1 - m)))
+        d1 = q2[s, a2[t]] - q1[a1[t]]
+        d2 = r[t] - q2[s, a2[t]]
+        q1[a1[t]] += alpha * (d1 + d2)
+        q2[s, a2[t]] += alpha * d2
+    return nll
+
+
+def _sim_twostep_tl(th, x: TwoStep, rng):
+    alpha, gamma = sigmoid(th[0]), sigmoid(th[5])
+    b_mb, b_mf, b2, pers = np.exp(th[1]), np.exp(th[2]), np.exp(th[3]), th[4]
+    n = len(x.a1)
+    probs = x.probs if x.probs is not None else drifting_probs(n, rng)
+    q1, q2, pt = np.zeros(2), np.full((2, 2), 0.5), np.array([0.7, 0.7])
+    a1, s2, a2, r, c = (np.zeros(n, np.int64) for _ in range(5))
+    prev = -1
+    for t in range(n):
+        mb = np.array([pt[a] * q2[a].max() + (1 - pt[a]) * q2[1 - a].max() for a in range(2)])
+        u = b_mb * mb + b_mf * q1
+        if prev >= 0:
+            u[prev] += pers
+        pa = np.exp(u - u.max()); pa /= pa.sum()
+        a1[t] = rng.random() < pa[1]
+        c[t] = rng.random() < 0.7
+        s2[t] = a1[t] if c[t] else 1 - a1[t]
+        pt[a1[t]] += gamma * (c[t] - pt[a1[t]])
+        v = b2 * q2[s2[t]]; pv = np.exp(v - v.max()); pv /= pv.sum()
+        a2[t] = rng.random() < pv[1]
+        r[t] = rng.random() < probs[t, s2[t], a2[t]]
+        d1 = q2[s2[t], a2[t]] - q1[a1[t]]; d2 = r[t] - q2[s2[t], a2[t]]
+        q1[a1[t]] += alpha * (d1 + d2); q2[s2[t], a2[t]] += alpha * d2
+        prev = a1[t]
+    return TwoStep(a1, s2, a2, r, c, probs, mask=x.mask)
+
+
+def _natural_tl(T):
+    out = {"alpha": sigmoid(T[:, 0]), "beta_mb": np.exp(T[:, 1]), "beta_mf": np.exp(T[:, 2]),
+           "beta2": np.exp(T[:, 3]), "persev": T[:, 4], "gamma": sigmoid(T[:, 5])}
+    out["w"] = out["beta_mb"] / (out["beta_mb"] + out["beta_mf"])
+    return out
+
+
+HYBRID_TL = Model("hybrid_tl", ["alpha", "beta_mb", "beta_mf", "beta2", "persev", "gamma"],
+                  lambda th, x: _nll_twostep_tl(th, x.a1, x.s2, x.a2, x.r, x.mask.astype(np.float64)),
+                  _natural_tl, _sim_twostep_tl,
+                  lambda x: int(((x.a1 >= 0) * (x.mask > 0)).sum() + ((x.a2 >= 0) * (x.mask > 0)).sum()))
+
+
 # ---------- stay regression (model-agnostic) ----------
 @dataclass
 class Stay:
@@ -157,4 +240,5 @@ STAY = Model("stay_logistic", ["intercept", "reward", "transition", "mb"], _nll_
              lambda T: {"stay_bias": T[:, 0], "mf_index": T[:, 1], "transition": T[:, 2], "mb_index": T[:, 3]},
              _sim_logistic, lambda s: len(s.y))
 
-MODELS = {"hybrid": _ts(True, True), "model_free": _ts(False, True), "model_based": _ts(True, False)}
+MODELS = {"hybrid": _ts(True, True), "model_free": _ts(False, True), "model_based": _ts(True, False),
+          "hybrid_tl": HYBRID_TL}

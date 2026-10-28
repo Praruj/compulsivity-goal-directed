@@ -46,7 +46,8 @@ def run(job: str) -> None:
     t0 = time.time()
     parts = job.split("_")
     if parts[0] == "recovery":
-        kind, study = parts[1], int(parts[2][1])
+        i = next(i for i, p in enumerate(parts) if p in ("s1", "s2", "s3"))
+        kind, study = "_".join(parts[1:i]), int(parts[i][1])
         with open(FITS / f"{kind}_s{study}.pkl", "rb") as fh:
             f = pickle.load(fh)
         model, data = build(kind, task_for(study), None)

@@ -20,12 +20,18 @@ pooled z = −5.07, no heterogeneity). The AUDIT association depended on the mod
 p = .098) and was null in the independent sample (p = .86). Adding CIT removed most of it, and CIT without the
 AUDIT items predicted planning in both samples. Split-half reliability was 0.67–0.74 in both samples, but the
 effect is small (r ≈ −0.08 to −0.14): about 1,160 people are needed for 80% power. Task behaviour added 0.004 to
-the cross-validated R² for CIT. A post-hoc Study 2 finding, that the absolute model-based weight tracks CIT more
-strongly than the hybrid weight *w*, did not replicate in the smaller sample.
+the cross-validated R² for CIT. A reaction-time marker, less second-stage slowing after rare transitions,
+replicated in both samples (Study 2 p < .001; independent sample one-sided p = .006). It carried information
+beyond the choice measure, and a choice + RT composite gave the strongest compulsivity association in both samples
+(Study 2 −0.12 SD, cutting the n for 80% power to about 530). A transition-learning account (Sharp et al., 2023)
+could not be tested: its learning-rate parameter was not recoverable (r ≈ 0.3). The finding that the absolute
+model-based weight tracks CIT more strongly than *w* reproduced Sharp et al. in Study 2 but not in the smaller
+sample.
 
 **Conclusions.** The compulsivity–planning association is robust to code, model and sample. In general-population
 samples, it is compulsivity, not drinking as such, that tracks weaker planning. The measure is reliable enough
-within a session, but the effect is too small for individual prediction or for typical lab sample sizes.
+within a session, but the effect is too small for individual prediction or for typical lab sample sizes. Adding
+reaction times is a cheap way to strengthen it.
 
 ## 1. Introduction
 
@@ -104,6 +110,14 @@ expectation-maximisation with a Laplace approximation (Huys et al., 2011), and p
 simulating each person's fitted parameters on their own reward schedule. Pure model-free and pure model-based
 variants were compared by integrated BIC.
 
+A transition-learning variant (`hybrid_tl`, Addendum 2) adds a rate γ with which the belief that each action
+leads to its "own" state (starting at the instructed 0.7) is updated after each transition, for the chosen action
+only. The model-based values use these learned beliefs.
+
+**Reaction-time marker.** For each person: median second-stage RT after rare transitions minus after common
+transitions (valid second-stage responses with RT > 150 ms). The composite marker is the mean of the z-scored
+choice-based model-based index (from the hierarchical stay regression) and the z-scored RT slowing.
+
 ### 2.5 Reliability, attenuation and power
 
 Split-half reliability (odd vs even trials; first vs second 100 trials in the Gillan samples), Spearman–Brown
@@ -120,7 +134,10 @@ perseveration, w, median RTs) plus covariates were compared with covariates alon
 ### 2.7 Pre-registration and deviations
 
 The original plan (H1–H5) was committed before any analysis, and the addendum (A1–A2, B1–B4) before any mixed
-model was fitted to real data and before the independent sample was downloaded. Deviations: (1) the first/second
+model was fitted to real data and before the independent sample was downloaded. Addendum 2 (C1–C4, D1–D3) was
+committed before any transition-learning model or RT measure was computed. While writing it I found that Sharp
+et al. (2023) had already reported the β_MB and transition-learning results in Study 2, so those analyses are
+replications, not discoveries. Deviations: (1) the first/second
 half split exists only for the 200-trial Gillan data; (2) the β_MB analysis is post-hoc and is labelled as such;
 (3) the first-stage 150 ms exclusion for the Seow data follows the authors' script and was not written into the
 addendum.
@@ -197,12 +214,52 @@ w 0.74). The hybrid weight w was not reliably related to CIT in Study 2 (−0.05
 not supported) or in the Seow sample (−0.012, p = .90).
 
 **[Post-hoc]** In Study 2, the absolute model-based weight (log β_MB) was strongly related to CIT (−0.117 SD
-[−0.169, −0.064], p < .001) and the model-free weight was not (−0.039, p = .18). This suggested that the ratio w
-dilutes the effect. The pattern did **not** replicate in the Seow sample (log β_MB −0.047 [−0.242, 0.147],
-p = .63), although that CI includes the Study 2 value and the test had only about 35% power. I treat it as an
-open hypothesis, not a finding.
+[−0.169, −0.064], p < .001) and the model-free weight was not (−0.039, p = .18), so the ratio w dilutes the
+effect. I later found that Sharp et al. (2023) had reported the same Study 2 result (β_MB ~ compulsivity
+β = −0.12), so this is an independent-code reproduction of their finding, not a new one. It did **not** replicate
+in the Seow sample (log β_MB −0.047 [−0.242, 0.147], p = .63), although that CI includes the Study 2 value and the
+test had only about 35% power.
 
-### 3.5 A group effect is not an individual predictor
+### 3.5 Transition learning cannot be measured with this task (Addendum 2, C)
+
+Sharp et al. (2023) proposed that compulsive people learn the stable transition structure too fast. I added an
+incremental transition-learning rate γ to the hybrid model (beliefs start at the instructed 0.7). The
+pre-registered condition for interpreting γ (C4: recovery r ≥ .5) **failed** in both samples: r = 0.29 in Study 2
+and 0.32 in the Seow sample, while every other parameter was recovered at r ≥ 0.75. The extra parameter also made
+the fit worse by integrated BIC (Study 2: 556,783 vs 556,620; Seow: 57,654 vs 57,651). For the record, logit γ
+was positively related to CIT in Study 2 (+0.062 SD, p = .030; with AD and SW +0.081, p = .010), in the direction
+Sharp et al. reported, and not in the Seow sample (+0.087, one-sided p = .13). With a parameter this poorly
+identified I do not interpret either result. In this design, the two-step task cannot separate a fast transition
+learner from a weak model-based learner, because both show up as reacting to rare transitions. Sharp et al.'s
+own mediation result, that β_MB fully accounts for the γ effect, is consistent with that (my C3: CIT on γ
+falls from +0.062 to +0.054 when log β_MB is added).
+
+### 3.6 A reaction-time marker replicates and adds to the choice measure (Addendum 2, D)
+
+People slow down at the second stage after a rare transition, a sign that they expected a different state
+(median slowing 63 ms in Study 2, 84 ms in Seow; 81% and 88% of people slowed down). Seow et al. (2021) reported
+that compulsive people slow down less.
+
+| | Study 2 (n = 1,413) | Seow 2021 (n = 192) |
+|---|---|---|
+| RT slowing ~ CIT (SD per SD) | −0.089 [−0.135, −0.043], p < .001 | −0.216 [−0.383, −0.048], one-sided p = .006 |
+| Split-half reliability: RT slowing / choice index / composite | 0.76 / 0.73 / 0.79 | 0.58 / 0.74 / 0.73 |
+| Correlation of RT slowing with the choice index | 0.26 | 0.23 |
+| CIT on choice index, RT slowing, composite (SD per SD) | −0.104 / −0.089 / **−0.121** | −0.158 / −0.216 / **−0.238** |
+| Both measures predicting CIT together | choice −0.088 (p < .001), RT −0.066 (p = .007) | choice −0.12 (p = .15), RT −0.18 (p = .016) |
+
+D1 replicated in both samples. The RT and choice measures are only weakly correlated (r ≈ 0.25), and in Study 2
+each predicts CIT when the other is controlled, so they capture partly different aspects of using the task
+structure. Averaging the two z-scores gave the strongest CIT association in both samples. In Study 2 it was as
+reliable as the better of the two measures (0.79), and in the Seow sample nearly so (0.73). At the composite's
+Study 2 effect size, 80% power needs about 530 people instead of about 1,160 for the raw choice index.
+
+![Choice, RT and composite markers](../outputs/figures/markers.png)
+
+*Figure 2. Left: association of each marker with CIT (person-level OLS with age, IQ and gender; HC3 95% CI).
+Right: odd/even split-half reliability, Spearman–Brown corrected.*
+
+### 3.7 A group effect is not an individual predictor
 
 Adding all task features to age, IQ and gender raised cross-validated R² for CIT from 0.070 to 0.074 (gain 0.004
 [0.002, 0.005]) and did not help for AUDIT (−0.003). This was pre-registered (H5, expected gain below 0.02).
@@ -226,13 +283,21 @@ The reliability results change what the effect means for practice. With split-ha
 both samples, noise is not what hides the effect. The effect is simply small: about 1–2% of variance. Two
 consequences follow. Studies of a few dozen patients cannot detect it reliably, and the task cannot be used to
 assess individuals: adding task behaviour barely improved the prediction of a person's CIT score. Its value is
-as a mechanistic probe in large samples, and as a target for better tasks. Reaction-time and drift-diffusion
-extensions, for example, can improve reliability (Shahar et al., 2019).
+as a mechanistic probe in large samples, and as a target for better tasks.
 
-The β_MB result illustrates why the independent sample was worth adding. In Study 2 it looked like a strong,
-interpretable finding: the "share" parameter w hides an effect in the "strength" parameter. With n = 192 it did
-not replicate. The test was underpowered, so this is not evidence against it, but it is a reason not to build on
-it until it holds in a larger sample.
+The reaction-time results point to one such improvement that needs no new data collection. Slowing after rare
+transitions is recorded in every two-step study, replicates in both samples, and is only weakly correlated with
+the choice measure. A simple average of the two gave a stronger compulsivity association than either alone in
+both samples, which would halve the sample needed. This fits evidence that RT-based modelling improves the
+reliability of two-step estimates (Shahar et al., 2019), and Seow et al.'s (2021) view that compulsivity affects
+how the task structure is represented, which shows up in surprise responses as well as in choices. A
+drift-diffusion model that uses choices and RTs together would be the principled version of this composite.
+
+Two computational refinements did not hold up. The β_MB result reproduced Sharp et al. (2023) in Study 2 but not
+in the smaller sample, so it should not be built on until it holds in a larger one. The transition-learning
+parameter could not be recovered at all. The latter is a measurement problem, not a negative result: with stable
+transitions, fast transition learning and weak model-based control make similar predictions. Testing Sharp et
+al.'s account needs a task in which the transitions change, as in their own Study 3.
 
 ## 5. Limitations
 
@@ -258,26 +323,30 @@ Seow, Benoit, Dempsey, Jennings, Maxwell, O'Connell & Gillan, 2021).
 ## References
 
 - Daw, N. D., Gershman, S. J., Seymour, B., Dayan, P., & Dolan, R. J. (2011). Model-based influences on humans'
-  choices and striatal prediction errors. *Neuron*, 69(6), 1204–1215.
+  choices and striatal prediction errors. *Neuron*, 69(6), 1204–1215. https://doi.org/10.1016/j.neuron.2011.02.027
 - Enkavi, A. Z., Eisenberg, I. W., Bissett, P. G., Mazza, G. L., MacKinnon, D. P., Marsch, L. A., & Poldrack, R. A.
   (2019). Large-scale analysis of test–retest reliabilities of self-regulation measures. *PNAS*, 116(12),
-  5472–5477.
+  5472–5477. https://doi.org/10.1073/pnas.1818430116
 - Gillan, C. M., Kosinski, M., Whelan, R., Phelps, E. A., & Daw, N. D. (2016). Characterizing a psychiatric
-  symptom dimension related to deficits in goal-directed control. *eLife*, 5, e11305.
+  symptom dimension related to deficits in goal-directed control. *eLife*, 5, e11305. https://doi.org/10.7554/eLife.11305
 - Hedge, C., Powell, G., & Sumner, P. (2018). The reliability paradox: Why robust cognitive tasks do not produce
   reliable individual differences. *Behavior Research Methods*, 50(3), 1166–1186.
+  https://doi.org/10.3758/s13428-017-0935-1
 - Huys, Q. J. M., Cools, R., Gölzer, M., Friedel, E., Heinz, A., Dolan, R. J., & Dayan, P. (2011). Disentangling
   the roles of approach, activation and valence in instrumental and Pavlovian responding. *PLoS Computational
-  Biology*, 7(4), e1002028.
+  Biology*, 7(4), e1002028. https://doi.org/10.1371/journal.pcbi.1002028
 - Sebold, M., Deserno, L., Nebe, S., Schad, D. J., Garbusow, M., Hägele, C., ... & Huys, Q. J. M. (2014).
-  Model-based and model-free decisions in alcohol dependence. *Neuropsychobiology*, 70(2), 122–131.
+  Model-based and model-free decisions in alcohol dependence. *Neuropsychobiology*, 70(2), 122–131. https://doi.org/10.1159/000362840
 - Seow, T. X. F., Benoit, E., Dempsey, C., Jennings, M., Maxwell, A., O'Connell, R., & Gillan, C. M. (2021).
   Model-based planning deficits in compulsivity are linked to faulty neural representations of task structure.
-  *Journal of Neuroscience*, 41(30), 6539–6550.
+  *Journal of Neuroscience*, 41(30), 6539–6550. https://doi.org/10.1523/JNEUROSCI.0031-21.2021
+- Sharp, P. B., Dolan, R. J., & Eldar, E. (2023). Disrupted state transition learning as a computational
+  marker of compulsivity. *Psychological Medicine*, 53(5), 2095–2105. https://doi.org/10.1017/S0033291721003846
 - Shahar, N., Hauser, T. U., Moutoussis, M., Moran, R., Keramati, M., NSPN consortium, & Dolan, R. J. (2019).
   Improving the reliability of model-based decision-making estimates in the two-stage decision task with
   reaction-times and drift-diffusion modeling. *PLoS Computational Biology*, 15(2), e1006803.
+  https://doi.org/10.1371/journal.pcbi.1006803
 - Voon, V., Derbyshire, K., Rück, C., Irvine, M. A., Worbe, Y., Enander, J., ... & Bullmore, E. T. (2015).
-  Disorders of compulsivity: a common bias towards learning habits. *Molecular Psychiatry*, 20(3), 345–352.
+  Disorders of compulsivity: a common bias towards learning habits. *Molecular Psychiatry*, 20(3), 345–352. https://doi.org/10.1038/mp.2014.44
 
-*References were written from memory; check volume and page numbers before submission.*
+*All references checked against Crossref on 2026-10-29.*

@@ -149,3 +149,15 @@ def test_seow_coding():
     assert x.s2.tolist()[:2] == [0, 1] and x.a2.tolist() == [1, 0, -1, -1]
     assert x.r.tolist() == [1, 0, 0, 0] and x.common.tolist()[:2] == [1, 1]
     assert x.probs.shape == (4, 2, 2) and x.probs[0, 1, 0] == 0.6
+
+
+def test_transition_learning_reduces_to_hybrid_and_simulates():
+    from cgd.models import MODELS
+    rng = np.random.default_rng(3)
+    th = np.array([0.0, 1.0, 0.3, 1.0, 0.2])
+    x = MODELS["hybrid"].simulate(th, TwoStep(*(np.zeros(200, np.int64) for _ in range(5))), rng)
+    frozen = np.append(th, -40.0)                      # gamma ~ 0: beliefs stay at 0.7
+    assert abs(MODELS["hybrid_tl"].nll(frozen, x) - MODELS["hybrid"].nll(th, x)) < 1e-8
+    assert MODELS["hybrid_tl"].nll(np.append(th, 0.0), x) != MODELS["hybrid"].nll(th, x)
+    y = MODELS["hybrid_tl"].simulate(np.append(th, -1.0), x, rng)
+    assert set(np.unique(y.a1)) <= {0, 1} and 0.6 < y.common.mean() < 0.8

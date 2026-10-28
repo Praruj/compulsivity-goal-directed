@@ -148,6 +148,37 @@ def replication_plot():
     plt.close(fig)
 
 
+def marker_plot():
+    path = ROOT / "outputs" / "results_addendum2.json"
+    if not path.exists():
+        return
+    A = json.loads(path.read_text())
+    labels = {"mb_index": "choice: model-based index", "rt_slowing": "RT: slowing after rare transitions",
+              "composite": "composite (mean of the two z-scores)"}
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.2), gridspec_kw={"width_ratios": [1.4, 1]})
+    for k, (tag, title, col) in enumerate([("study2", "Gillan Study 2 (n = 1,413)", BLUE),
+                                           ("seow2021", "Seow 2021 (n = 192)", RED)]):
+        r = A[tag]
+        for i, o in enumerate(labels):
+            t = r["D3_CIT_on_each"][o]["terms"]["CIT"]
+            y = 2 - i + (0.15 if k == 0 else -0.15)
+            axes[0].errorbar(t["beta"], y, xerr=[[t["beta"] - t["ci_low"]], [t["ci_high"] - t["beta"]]], fmt="o",
+                             color=col, capsize=2, label=title if i == 0 else None)
+            rel = r["D2_reliability_odd_even"][o]["spearman_brown"]
+            axes[1].barh(y, rel, 0.28, color=col)
+    for ax in axes:
+        ax.set_yticks([2, 1, 0], list(labels.values()) if ax is axes[0] else ["", "", ""], fontsize=8)
+    axes[0].axvline(0, color=INK, lw=0.8)
+    axes[0].set_xlabel("CIT effect (SD of marker per SD of CIT, 95% CI)\n"
+                       "more negative = stronger link", fontsize=8)
+    axes[0].legend(frameon=False, fontsize=7, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2)
+    axes[1].set_xlim(0, 1)
+    axes[1].set_xlabel("split-half reliability (odd/even)", fontsize=8)
+    fig.tight_layout()
+    fig.savefig(FIG / "markers.png", dpi=160)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    stay_plot(); forest(); reliability_plot(); power_plot(); replication_plot()
+    stay_plot(); forest(); reliability_plot(); power_plot(); replication_plot(); marker_plot()
     print("figures in", FIG)

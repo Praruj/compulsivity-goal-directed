@@ -20,6 +20,11 @@ re-analysed their public trial-level data (**Study 1: 548 people, Study 2: 1,413
   the new sample. CIT without the alcohol items predicts planning in both samples.
 - **Reliable enough, but small.** Split-half reliability is 0.67–0.74 in both samples; the effect is r ≈ −0.1,
   so about 1,160 people are needed. It is no use for predicting an individual (R² +0.004).
+- **Reaction times make it stronger.** Compulsive people slow down less after surprising transitions, which
+  replicated in both samples. Averaging this RT marker with the choice measure gave the strongest compulsivity
+  link in both samples, roughly halving the sample size needed (about 530).
+- **Two model refinements did not hold up.** A transition-learning parameter (Sharp et al. 2023) cannot be recovered
+  from this task (r ≈ 0.3), and the β_MB result (also Sharp et al.'s) did not replicate in the smaller sample.
 
 ![Replication across samples and methods](outputs/figures/replication.png)
 
@@ -41,6 +46,9 @@ re-analysed their public trial-level data (**Study 1: 548 people, Study 2: 1,413
 | **B2** Pooled Study 2 + Seow | −0.061 [−0.084, −0.037], z = −5.07; Q = 0.27, p = .60 | consistent |
 | **B3** AUDIT in the independent sample | −0.006, p = .86; CIT without AUDIT items −0.069, p = .037 | null (estimate only) |
 | **B4** Reliability in the independent sample | model-based index 0.74 (hierarchical), 0.67 (raw); CIT 0.94 | same as Study 2 |
+| **C1/C2** Transition-learning rate γ higher with CIT (Sharp et al. 2023) | Study 2 +0.062, p = .030; Seow +0.087, p = .13; but γ recovery r = 0.29 / 0.32 | **not interpretable** (recovery < .5; worse iBIC) |
+| **D1** Less RT slowing after rare transitions with higher CIT (Seow et al. 2021) | Study 2 −0.089 SD, p < .001; Seow −0.216 SD, one-sided p = .006 | **replicated in both** |
+| **D2/D3** RT + choice composite | reliability 0.79 / 0.73; CIT −0.121 (Study 2), −0.238 (Seow), stronger than either alone | **better marker** |
 
 *H1–H3 trial-level effects are reward × transition × score log-odds per SD from a GEE with age, IQ and gender (all
 interacted with reward × transition), 277,012 trial pairs. A1–B4 use the mixed model. Square brackets are 95% CIs.*
@@ -55,7 +63,16 @@ Laplace approximation, written by me because Python has no lme4) gives CIT −0.
 published −0.058 and +0.031. In the Seow et al. 2021 sample (192 different people, tested in the lab, 150
 trials), CIT again predicts less model-based control (z = −2.11), with no difference from Study 2. Under the mixed
 model, Study 1's OCD result becomes p = .053, so it is borderline under every method. The post-hoc β_MB result in
-point 4 **did not replicate** in the new sample (p = .63; about 35% power), so treat it as a hypothesis.
+point 4 **did not replicate** in the new sample (p = .63; about 35% power), so treat it as a hypothesis. It had also
+already been reported in Study 2 by Sharp, Dolan & Eldar (2023), which I found only after writing it up.
+
+**Addendum 2: transition learning and reaction times.** A second pre-registered addendum tested two published
+ideas in both samples. Slowing down after a rare transition (a sign of surprise) is weaker in more compulsive
+people in both samples, is about as reliable as the choice measure, and correlates with it only 0.25. So
+combining the two gives a stronger marker. A model where people keep re-learning the transition structure
+(Sharp et al. 2023) could not be tested: its learning rate cannot be recovered from this task.
+
+![Choice, RT and composite markers](outputs/figures/markers.png)
 
 **1. The core finding replicates closely with independent code.** With AD, CIT and SW in one model, CIT carries
 the deficit (z = −4.57) and AD carries none. Gillan et al.'s glmer gives z = −4.71 for CIT and z = 2.45 for SW. My
@@ -150,13 +167,15 @@ python scripts/analyze.py       # GEEs, person-level models, reliability, predic
 # from https://osf.io/mx9kf (CC-BY 4.0) to data/raw/seow2021/
 python scripts/fit_models.py stay_s3 stay_s3_odd stay_s3_even hybrid_s3 recovery_hybrid_s3   # ~5 min
 python scripts/extend.py        # mixed models + independent sample -> outputs/results_addendum.json (~15 min)
+python scripts/fit_models.py hybrid_tl_s2 hybrid_tl_s3 recovery_hybrid_tl_s2 recovery_hybrid_tl_s3   # ~40 min
+python scripts/extend2.py       # addendum 2: transition learning + RT marker -> outputs/results_addendum2.json
 python scripts/report.py        # figures
-pytest -q                       # 9 tests on synthetic data
+pytest -q                       # 10 tests on synthetic data
 ```
 
 ```
 src/cgd/data.py     task-file parsers (Gillan, Seow), factor scores, stay design, raw model-based index
-src/cgd/models.py   hybrid RL model (masked likelihood + simulation), hierarchical stay regression
+src/cgd/models.py   hybrid RL model (+ transition-learning variant), hierarchical stay regression
 src/cgd/fit.py      hierarchical EM fitting, iBIC, recovery (from self-control-phenotypes)
 src/cgd/stats.py    GEE, Laplace mixed model, OLS, split-half, attenuation, power, FDR, CV prediction
 docs/REASONING.md   pre-registration (before any analysis) + addendum (before the mixed model and new data)
@@ -183,4 +202,6 @@ Gillan ら（*eLife* 2016）は、2段階課題で「モデルベース（計画
 - **信頼性は課題内では十分（折半法 0.67〜0.74、両サンプルで同様）でした。** 問題は測定誤差ではなく効果量の小ささ（r ≈ −0.08〜−0.10）で、
   検出には約1,160名が必要です。
 - **[事後分析]** 研究2ではモデルベース重みの「強さ」β_MB が CIT と強く関連しましたが、独立サンプルでは再現されませんでした。
+- **反応時間を加えると指標が強くなります。** 稀な遷移の後の反応の遅れは強迫性が高い人ほど小さく、両サンプルで再現されました。
+  選択指標と組み合わせると、強迫性との関連が最も強くなりました（必要なサンプル数が約半分に）。
 - 課題データを加えても、個人の CIT 得点の予測精度はほぼ向上しませんでした（R² +0.004）。集団レベルの効果は個人の予測にはなりません。

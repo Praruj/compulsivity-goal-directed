@@ -153,7 +153,8 @@ def seow_from_frame(d: pd.DataFrame, fast: float = 0.15) -> TwoStep:
     r = np.where(ok2, d.hit.fillna(0).to_numpy(), 0).astype(np.int64)
     c = np.where(ok1, d.trans.to_numpy() == 1, 0).astype(np.int64)
     probs = d[["r1", "r2", "r3", "r4"]].to_numpy().reshape(-1, 2, 2)
-    return TwoStep(a1, s2, a2, r, c, probs, np.where(ok1, d.S1rt, np.nan), np.where(ok2, d.S2rt, np.nan))
+    ms = 1000.0                                                     # RTs in ms, like the Gillan files
+    return TwoStep(a1, s2, a2, r, c, probs, np.where(ok1, d.S1rt * ms, np.nan), np.where(ok2, d.S2rt * ms, np.nan))
 
 
 def load_seow(root: Path = SEOW) -> tuple[dict[str, TwoStep], pd.DataFrame]:
