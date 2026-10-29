@@ -16,7 +16,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from cgd.data import load_seow, load_self_report, load_task  # noqa: E402
 from cgd.fit import fit, recovery  # noqa: E402
+from cgd.ddm import RLDDM  # noqa: E402
 from cgd.models import MODELS, STAY, stay_data  # noqa: E402
+
+MODELS = {**MODELS, "rlddm": RLDDM}
 
 FITS = ROOT / "outputs" / "fits"
 HALVES = {"odd": lambda n: np.arange(n) % 2 == 1, "even": lambda n: np.arange(n) % 2 == 0,

@@ -161,3 +161,20 @@ def test_transition_learning_reduces_to_hybrid_and_simulates():
     assert MODELS["hybrid_tl"].nll(np.append(th, 0.0), x) != MODELS["hybrid"].nll(th, x)
     y = MODELS["hybrid_tl"].simulate(np.append(th, -1.0), x, rng)
     assert set(np.unique(y.a1)) <= {0, 1} and 0.6 < y.common.mean() < 0.8
+
+
+def test_wiener_density_and_rlddm():
+    from scipy.integrate import quad
+    from cgd.ddm import RLDDM, wiener_lower
+    for v, a in [(0.0, 1.0), (1.5, 1.2), (-2.0, 2.0)]:
+        up = quad(lambda t: wiener_lower(t, -v, a, 0.5), 0, 20, limit=400)[0]
+        lo = quad(lambda t: wiener_lower(t, v, a, 0.5), 0, 20, limit=400)[0]
+        assert abs(up + lo - 1) < 1e-5 and abs(up - 1 / (1 + np.exp(-v * a))) < 1e-5
+    rng = np.random.default_rng(4)
+    z = np.zeros(200, np.int64)
+    x0 = TwoStep(z, z, z, z, z, drifting_probs(200, rng), np.full(200, 400.0), np.full(200, 400.0))
+    th = np.array([0.0, 1.0, 0.0, 0.3, 0.2, 0.5, 1.2, 0.2, 0.5, 1.0])     # tau = 0.1 s
+    x = RLDDM.simulate(th, x0, rng)
+    slow = np.median(x.rt2[x.common == 0]) - np.median(x.rt2[x.common == 1])
+    assert 50 < slow < 150
+    assert np.isfinite(RLDDM.nll(th, x)) and RLDDM.nll(th, x) < RLDDM.nll(np.append(th[:9], -5.0), x)

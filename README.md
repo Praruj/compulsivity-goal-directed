@@ -25,6 +25,9 @@ re-analysed their public trial-level data (**Study 1: 548 people, Study 2: 1,413
   link in both samples, roughly halving the sample size needed (about 530).
 - **Two model refinements did not hold up.** A transition-learning parameter (Sharp et al. 2023) cannot be recovered
   from this task (r ≈ 0.3), and the β_MB result (also Sharp et al.'s) did not replicate in the smaller sample.
+- **A full choice + RT model did worse than the simple average.** A pre-registered drift-diffusion model (RL-DDM)
+  was identifiable and found the compulsivity effect in Study 2, but it was weaker and less reliable than the
+  composite. It missed most of the RT slowing it was meant to capture (it predicted 30 ms against 99 ms observed).
 
 ![Replication across samples and methods](outputs/figures/replication.png)
 
@@ -49,6 +52,11 @@ re-analysed their public trial-level data (**Study 1: 548 people, Study 2: 1,413
 | **C1/C2** Transition-learning rate γ higher with CIT (Sharp et al. 2023) | Study 2 +0.062, p = .030; Seow +0.087, p = .13; but γ recovery r = 0.29 / 0.32 | **not interpretable** (recovery < .5; worse iBIC) |
 | **D1** Less RT slowing after rare transitions with higher CIT (Seow et al. 2021) | Study 2 −0.089 SD, p < .001; Seow −0.216 SD, one-sided p = .006 | **replicated in both** |
 | **D2/D3** RT + choice composite | reliability 0.79 / 0.73; CIT −0.121 (Study 2), −0.238 (Seow), stronger than either alone | **better marker** |
+| **E1** RL-DDM parameters recoverable | all r ≥ 0.73 (Study 2), ≥ 0.51 (Seow); v_MB 0.73 / 0.77, τ 0.87 / 0.87 | supported |
+| **E2** Lower model-based drift (log v_MB) with higher CIT | Study 2 −0.075 SD, one-sided p = .002; Seow −0.043, p = .29 | Study 2 only |
+| **E3** Smaller rare-transition delay τ with higher CIT | Study 2 −0.032, p = .11; Seow +0.077, p = .82 | not supported |
+| **E4** RL-DDM beats the simple composite | reliability 0.71 (log v_MB) / 0.59 (RL-DDM composite) vs 0.79; CIT −0.075 / −0.081 vs −0.121 | **no** |
+| **E5** Model reproduces RT slowing within 25% | simulated 30 vs observed 99 ms (Study 2); 36 vs 101 ms (Seow) | **fails** |
 
 *H1–H3 trial-level effects are reward × transition × score log-odds per SD from a GEE with age, IQ and gender (all
 interacted with reward × transition), 277,012 trial pairs. A1–B4 use the mixed model. Square brackets are 95% CIs.*
@@ -73,6 +81,16 @@ combining the two gives a stronger marker. A model where people keep re-learning
 (Sharp et al. 2023) could not be tested: its learning rate cannot be recovered from this task.
 
 ![Choice, RT and composite markers](outputs/figures/markers.png)
+
+**Addendum 3: a joint choice + RT model.** The principled version of that composite is a reinforcement-learning
+drift-diffusion model (Shahar et al. 2019), which explains each choice and its reaction time together. I
+pre-registered it, wrote the Wiener likelihood myself, and fitted it in both samples. It is well identified, and
+its model-based drift is lower in compulsive people in Study 2. But it is weaker and less reliable than the simple
+average, and it does not replicate in the smaller sample. Its own model check shows why: it reproduces choices but
+only about a third of the RT slowing, because a fixed extra delay after rare transitions is the wrong shape for
+that effect. For now the simple composite is the better marker.
+
+![RL-DDM vs simple markers](outputs/figures/rlddm.png)
 
 **1. The core finding replicates closely with independent code.** With AD, CIT and SW in one model, CIT carries
 the deficit (z = −4.57) and AD carries none. Gillan et al.'s glmer gives z = −4.71 for CIT and z = 2.45 for SW. My
@@ -169,16 +187,19 @@ python scripts/fit_models.py stay_s3 stay_s3_odd stay_s3_even hybrid_s3 recovery
 python scripts/extend.py        # mixed models + independent sample -> outputs/results_addendum.json (~15 min)
 python scripts/fit_models.py hybrid_tl_s2 hybrid_tl_s3 recovery_hybrid_tl_s2 recovery_hybrid_tl_s3   # ~40 min
 python scripts/extend2.py       # addendum 2: transition learning + RT marker -> outputs/results_addendum2.json
+python scripts/fit_models.py hybrid_s3_odd hybrid_s3_even rlddm_s2 rlddm_s2_odd rlddm_s2_even recovery_rlddm_s2     rlddm_s3 rlddm_s3_odd rlddm_s3_even recovery_rlddm_s3   # several hours (Study 2 ~15 min per EM iteration)
+python scripts/extend3.py       # addendum 3: RL-DDM -> outputs/results_addendum3.json
 python scripts/report.py        # figures
-pytest -q                       # 10 tests on synthetic data
+pytest -q                       # 11 tests on synthetic data
 ```
 
 ```
 src/cgd/data.py     task-file parsers (Gillan, Seow), factor scores, stay design, raw model-based index
 src/cgd/models.py   hybrid RL model (+ transition-learning variant), hierarchical stay regression
+src/cgd/ddm.py      RL drift-diffusion model: Wiener density (Navarro & Fuss 2009), likelihood, simulation
 src/cgd/fit.py      hierarchical EM fitting, iBIC, recovery (from self-control-phenotypes)
 src/cgd/stats.py    GEE, Laplace mixed model, OLS, split-half, attenuation, power, FDR, CV prediction
-docs/REASONING.md   pre-registration (before any analysis) + addendum (before the mixed model and new data)
+docs/REASONING.md   pre-registration (before any analysis) + 3 addenda, each committed before its analysis
 docs/PAPER.md       paper-style write-up
 ```
 
@@ -204,4 +225,7 @@ Gillan ら（*eLife* 2016）は、2段階課題で「モデルベース（計画
 - **[事後分析]** 研究2ではモデルベース重みの「強さ」β_MB が CIT と強く関連しましたが、独立サンプルでは再現されませんでした。
 - **反応時間を加えると指標が強くなります。** 稀な遷移の後の反応の遅れは強迫性が高い人ほど小さく、両サンプルで再現されました。
   選択指標と組み合わせると、強迫性との関連が最も強くなりました（必要なサンプル数が約半分に）。
+- **選択と反応時間を同時に扱うドリフト拡散モデル（RL-DDM）は、単純な平均に及びませんでした。** パラメータは推定可能で、
+  研究2ではモデルベースのドリフトが CIT と関連しましたが（片側 p = .002）、独立サンプルでは再現されず、
+  信頼性も効果量も単純な合成指標より劣りました。モデルは反応の遅れの約3分の1しか再現できませんでした。
 - 課題データを加えても、個人の CIT 得点の予測精度はほぼ向上しませんでした（R² +0.004）。集団レベルの効果は個人の予測にはなりません。

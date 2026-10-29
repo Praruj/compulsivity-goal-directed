@@ -24,14 +24,18 @@ the cross-validated R² for CIT. A reaction-time marker, less second-stage slowi
 replicated in both samples (Study 2 p < .001; independent sample one-sided p = .006). It carried information
 beyond the choice measure, and a choice + RT composite gave the strongest compulsivity association in both samples
 (Study 2 −0.12 SD, cutting the n for 80% power to about 530). A transition-learning account (Sharp et al., 2023)
-could not be tested: its learning-rate parameter was not recoverable (r ≈ 0.3). The finding that the absolute
+could not be tested: its learning-rate parameter was not recoverable (r ≈ 0.3). A pre-registered joint choice + RT
+drift-diffusion model (RL-DDM) recovered well (all parameters r ≥ 0.51) and its model-based drift tracked CIT in
+Study 2 (−0.075 SD, one-sided p = .002), but not in the independent sample. It was less reliable and less strongly
+related to CIT than the simple composite, and it failed its own model check: it predicted about a third of the
+observed RT slowing. The finding that the absolute
 model-based weight tracks CIT more strongly than *w* reproduced Sharp et al. in Study 2 but not in the smaller
 sample.
 
 **Conclusions.** The compulsivity–planning association is robust to code, model and sample. In general-population
 samples, it is compulsivity, not drinking as such, that tracks weaker planning. The measure is reliable enough
 within a session, but the effect is too small for individual prediction or for typical lab sample sizes. Adding
-reaction times is a cheap way to strengthen it.
+reaction times is a cheap way to strengthen it, and so far a simple average does better than a full joint model.
 
 ## 1. Introduction
 
@@ -118,6 +122,15 @@ only. The model-based values use these learned beliefs.
 transitions (valid second-stage responses with RT > 150 ms). The composite marker is the mean of the z-scored
 choice-based model-based index (from the hierarchical stay regression) and the z-scored RT slowing.
 
+**Joint choice + RT model (RL-DDM, Addendum 3).** Following Shahar et al. (2019), each choice is a Wiener
+diffusion whose drift is set by the learned values (learned as in the hybrid model). At stage 1 the drift is
+v_MB × (model-based value difference) + v_MF × (model-free value difference) ± perseveration, with boundary a1 and
+non-decision time t1. At stage 2 the drift is v2 × (Q2 difference), with boundary a2, non-decision time t2, and τ,
+an extra non-decision delay after rare transitions meant to capture the surprise slowing. The starting point is
+unbiased, there is a 2% uniform lapse, and RTs under 150 ms are dropped. Each non-decision time is bounded by 0.98 of
+the person's fastest RT. The model has 10 parameters per person and is fitted with the same hierarchical EM. The
+density uses the Navarro & Fuss (2009) series.
+
 ### 2.5 Reliability, attenuation and power
 
 Split-half reliability (odd vs even trials; first vs second 100 trials in the Gillan samples), Spearman–Brown
@@ -140,7 +153,9 @@ et al. (2023) had already reported the β_MB and transition-learning results in 
 replications, not discoveries. Deviations: (1) the first/second
 half split exists only for the 200-trial Gillan data; (2) the β_MB analysis is post-hoc and is labelled as such;
 (3) the first-stage 150 ms exclusion for the Seow data follows the authors' script and was not written into the
-addendum.
+addendum. (4) Addendum 3 (E1–E5) was committed before the RL-DDM was fitted to any real data. While the fits were
+running I found a sign error in its E4 composite (z(−τ) where z(+τ) was meant). I corrected it in the
+pre-registration before seeing any result and recorded the correction there.
 
 ## 3. Results
 
@@ -259,7 +274,41 @@ Study 2 effect size, 80% power needs about 530 people instead of about 1,160 for
 *Figure 2. Left: association of each marker with CIT (person-level OLS with age, IQ and gender; HC3 95% CI).
 Right: odd/even split-half reliability, Spearman–Brown corrected.*
 
-### 3.7 A group effect is not an individual predictor
+### 3.7 A joint choice + RT model does not beat the simple composite (Addendum 3, E)
+
+| | Study 2 (n = 1,413) | Seow 2021 (n = 192) |
+|---|---|---|
+| E1 recovery: v_MB / τ / lowest parameter | 0.73 / 0.87 / 0.73 (v_MB) | 0.77 / 0.87 / 0.51 (t2) |
+| **E2** log v_MB ~ CIT (SD per SD) | −0.075 [−0.126, −0.024], one-sided p = .002 | −0.043 [−0.199, 0.113], one-sided p = .29 |
+| **E3** τ ~ CIT | −0.032 [−0.083, 0.019], one-sided p = .11 | +0.077 [−0.088, 0.243], one-sided p = .82 |
+| E4 reliability: log v_MB / τ / RL-DDM composite | 0.71 / 0.52 / 0.59 | 0.68 / 0.50 / 0.61 |
+| E4 reliability: simple composite (Addendum 2) | 0.79 | 0.73 |
+| E4 CIT effect: RL-DDM composite vs simple composite | −0.081 vs **−0.121** | +0.026 vs **−0.238** |
+| Correlation of log v_MB with the choice-model log β_MB | 0.85 | 0.85 |
+| Correlation of τ with raw RT slowing | 0.18 | 0.29 |
+| **E5** median RT slowing, observed vs simulated | 99 ms vs 30 ms | 101 ms vs 36 ms |
+
+The RL-DDM was identifiable (E1). In Study 2 its model-based drift was lower in more compulsive people (E2), but
+by less than the choice-only measures, and the effect did not replicate in the smaller sample. τ was unrelated to
+CIT in both samples (E3). By the pre-registered E4 rule the RL-DDM did not win: neither log v_MB nor the RL-DDM
+composite matched the simple composite's CIT effect, and neither was within 0.05 of its reliability.
+
+The model check (E5) shows why. The simulated stay pattern was close to the observed one, though with a slightly
+weaker model-based signature. The simulated RT slowing, however, was only about a third of the observed slowing,
+and τ correlated weakly with each person's raw slowing (0.18 and 0.29). So the model did not capture the RT signal
+that made the composite work. log v_MB was largely the choice-model β_MB again (r = 0.85). A post-hoc check suggests why τ missed the slowing.
+Because t2 sits close to each person's fastest RT (median 92% of its bound), τ cannot exceed the gap between t2
+and the person's fastest rare-transition RT (median 49 ms in Study 2, 60 ms in Seow) without pushing that trial
+into the lapse. τ correlated more with this gap (0.49 and 0.71) than with the median slowing (0.18 and 0.29). So
+a shift parameter is set by the fastest rare trials, not by the typical one. The slowing is better described as a
+change in the whole RT distribution, for example lower stage-2 drift or a wider boundary after surprise. *(Post-hoc,
+not pre-registered.)*
+
+![RL-DDM markers vs simple markers](../outputs/figures/rlddm.png)
+
+*Figure 3. As Figure 2, for the RL-DDM parameters alongside the choice and RT markers.*
+
+### 3.8 A group effect is not an individual predictor
 
 Adding all task features to age, IQ and gender raised cross-validated R² for CIT from 0.070 to 0.074 (gain 0.004
 [0.002, 0.005]) and did not help for AUDIT (−0.003). This was pre-registered (H5, expected gain below 0.02).
@@ -290,8 +339,12 @@ transitions is recorded in every two-step study, replicates in both samples, and
 the choice measure. A simple average of the two gave a stronger compulsivity association than either alone in
 both samples, which would halve the sample needed. This fits evidence that RT-based modelling improves the
 reliability of two-step estimates (Shahar et al., 2019), and Seow et al.'s (2021) view that compulsivity affects
-how the task structure is represented, which shows up in surprise responses as well as in choices. A
-drift-diffusion model that uses choices and RTs together would be the principled version of this composite.
+how the task structure is represented, which shows up in surprise responses as well as in choices. I tested
+the principled version, a drift-diffusion model of choices and RTs together, and it did worse than the simple
+average. It reproduced choices but not the surprise slowing, because a delay added to the non-decision time is
+the wrong shape for that effect. A joint model is only better than a composite if it fits the RT effect it is
+meant to capture. Letting surprise lower the stage-2 drift or raise the boundary would be the next thing to try,
+and it would need its own pre-registration.
 
 Two computational refinements did not hold up. The β_MB result reproduced Sharp et al. (2023) in Study 2 but not
 in the smaller sample, so it should not be built on until it holds in a larger one. The transition-learning
@@ -314,9 +367,12 @@ al.'s account needs a task in which the transitions change, as in their own Stud
 - **The factor weights come from Study 2.** Applying them to Study 2 itself makes CIT optimally weighted for that
   sample. The Seow sample uses the same weights out of sample, which is a fairer test.
 
+- **The RL-DDM is one specification.** It failed its own model check for RT slowing. Its negative E4 result is
+  about this model, not about joint choice–RT modelling in general.
+
 ## 6. Data and code availability
 
-Code, pre-registration, results (`outputs/results.json`, `outputs/results_addendum.json`) and figures are in
+Code, pre-registration, results (`outputs/results.json`, `outputs/results_addendum*.json`) and figures are in
 this repository. Raw data: OSF usdgt (no licence stated; not redistributed) and OSF mx9kf (CC-BY 4.0;
 Seow, Benoit, Dempsey, Jennings, Maxwell, O'Connell & Gillan, 2021).
 
@@ -335,6 +391,8 @@ Seow, Benoit, Dempsey, Jennings, Maxwell, O'Connell & Gillan, 2021).
 - Huys, Q. J. M., Cools, R., Gölzer, M., Friedel, E., Heinz, A., Dolan, R. J., & Dayan, P. (2011). Disentangling
   the roles of approach, activation and valence in instrumental and Pavlovian responding. *PLoS Computational
   Biology*, 7(4), e1002028. https://doi.org/10.1371/journal.pcbi.1002028
+- Navarro, D. J., & Fuss, I. G. (2009). Fast and accurate calculations for first-passage times in Wiener diffusion
+  models. *Journal of Mathematical Psychology*, 53(4), 222–230. https://doi.org/10.1016/j.jmp.2009.02.003
 - Sebold, M., Deserno, L., Nebe, S., Schad, D. J., Garbusow, M., Hägele, C., ... & Huys, Q. J. M. (2014).
   Model-based and model-free decisions in alcohol dependence. *Neuropsychobiology*, 70(2), 122–131. https://doi.org/10.1159/000362840
 - Seow, T. X. F., Benoit, E., Dempsey, C., Jennings, M., Maxwell, A., O'Connell, R., & Gillan, C. M. (2021).

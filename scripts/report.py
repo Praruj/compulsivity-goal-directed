@@ -179,6 +179,40 @@ def marker_plot():
     plt.close(fig)
 
 
+def ddm_plot():
+    path = ROOT / "outputs" / "results_addendum3.json"
+    if not path.exists():
+        return
+    A = json.loads(path.read_text())
+    labels = {"log_v_mb": "RL-DDM: log v_MB", "tau": "RL-DDM: τ (rare-transition delay)",
+              "ddm_composite": "RL-DDM composite", "hy_log_beta_mb": "choice model: log β_MB",
+              "mb_index": "choice: model-based index", "rt_slowing": "RT: slowing after rare",
+              "composite": "simple composite (Addendum 2)"}
+    rel_key = {"hy_log_beta_mb": "hybrid_log_beta_mb"}
+    n = len(labels)
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 4.0), gridspec_kw={"width_ratios": [1.4, 1]})
+    for k, (tag, title, col) in enumerate([("study2", "Gillan Study 2 (n = 1,413)", BLUE),
+                                           ("seow2021", "Seow 2021 (n = 192)", RED)]):
+        r = A[tag]
+        for i, o in enumerate(labels):
+            t = r["E4_CIT_effect"][o]
+            y = n - 1 - i + (0.15 if k == 0 else -0.15)
+            axes[0].errorbar(t["beta"], y, xerr=[[t["beta"] - t["ci_low"]], [t["ci_high"] - t["beta"]]], fmt="o",
+                             color=col, capsize=2, label=title if i == 0 else None)
+            axes[1].barh(y, r["E4_reliability_odd_even"][rel_key.get(o, o)], 0.28, color=col)
+    for ax in axes:
+        ax.set_yticks(range(n - 1, -1, -1), list(labels.values()) if ax is axes[0] else [""] * n, fontsize=8)
+    axes[0].axvline(0, color=INK, lw=0.8)
+    axes[0].set_xlabel("CIT effect (SD of marker per SD of CIT, 95% CI)\n"
+                       "more negative = stronger link", fontsize=8)
+    axes[0].legend(frameon=False, fontsize=7, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2)
+    axes[1].set_xlim(0, 1)
+    axes[1].set_xlabel("split-half reliability (odd/even)", fontsize=8)
+    fig.tight_layout()
+    fig.savefig(FIG / "rlddm.png", dpi=160)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    stay_plot(); forest(); reliability_plot(); power_plot(); replication_plot(); marker_plot()
+    stay_plot(); forest(); reliability_plot(); power_plot(); replication_plot(); marker_plot(); ddm_plot()
     print("figures in", FIG)
