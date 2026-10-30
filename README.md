@@ -117,7 +117,7 @@ index gives split-half reliabilities of 0.73 (odd vs even trials) and 0.67 (firs
 gives 0.96. Correcting for that noise only moves the CIT–planning correlation from r = −0.08 to −0.10.
 Detecting it at 80% power takes about 1,160 people (about 810 even with perfect measurement). This sample has
 1,413, so the effect is real but smaller than most lab studies can see. Combined with my
-[self-control-phenotypes](../self-control-phenotypes) result (4-month retest ICC 0.28–0.32 for the same task),
+self-control-phenotypes project (to be released) result (4-month retest ICC 0.28–0.32 for the same task),
 the measure is consistent *within* a session but not *across* months.
 
 ![Reliability](outputs/figures/reliability.png)
